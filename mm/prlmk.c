@@ -123,7 +123,7 @@ module_param_named(free_swap_limit, free_swap_limit, int, 0644);
  * group ID, and chooses the heaviest task from them to
  * be considered when tasks are getting killed.
  */
-static bool kill_heaviest_gid = true;
+static bool kill_heaviest_gid = false;
 module_param_named(kill_heaviest_gid, kill_heaviest_gid, bool, 0644);
 
 static inline int atask_limit(void)
@@ -448,7 +448,6 @@ static void proc_tasks(struct work_struct *work)
 	for_each_process(tsk) {
 		struct task_struct *p;
 		short adj;
-		struct group_info *group;
 		kgid_t gid = KGIDT_INIT(0);
 
 		if (test_task(tsk))
@@ -469,14 +468,6 @@ static void proc_tasks(struct work_struct *work)
 
 		anonsize = get_mm_counter(p->mm, MM_ANONPAGES);
 		task_unlock(p);
-
-		if (kill_heaviest_gid) {
-			group = __task_cred(p)->group_info;
-			gid = group->gid[(group->ngroups - 1)];
-
-			if (!__kgid_val(gid))
-				continue;
-		}
 
 		selected[tcnt].p = p;
 		selected[tcnt].adj = adj;
